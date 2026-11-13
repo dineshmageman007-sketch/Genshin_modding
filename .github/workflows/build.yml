@@ -1,0 +1,38 @@
+name: build
+on:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python tools/test_launcher.py
+      - run: pip install pyinstaller
+      - run: pyinstaller --onefile --windowed --uac-admin --paths src --name GenshinModLauncher src/gui.py
+      - name: Assemble release folder (exe + 3dmigoto + bundled 7-Zip for RAR files)
+        shell: cmd
+        run: |
+          mkdir GenshinModLauncher
+          copy dist\GenshinModLauncher.exe GenshinModLauncher\
+          xcopy 3dmigoto GenshinModLauncher\3dmigoto\ /E /I /Y
+          mkdir GenshinModLauncher\tools
+          copy "C:\Program Files\7-Zip\7z.exe" GenshinModLauncher\tools\
+          copy "C:\Program Files\7-Zip\7z.dll" GenshinModLauncher\tools\
+          copy "C:\Program Files\7-Zip\License.txt" GenshinModLauncher\tools\7-Zip-License.txt
+          copy README.md GenshinModLauncher\
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GenshinModLauncher
+          path: GenshinModLauncher
+      - name: Zip for release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: cmd
+        run: powershell -NoProfile -Command "Compress-Archive -Path GenshinModLauncher -DestinationPath GenshinModLauncher.zip"
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with: { files: GenshinModLauncher.zip }

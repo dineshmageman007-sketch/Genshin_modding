@@ -1,0 +1,11 @@
+build/
+dist/
+__pycache__/
+*.pyc
+logs/
+launcher_config.json
+3dmigoto/d3d11_log.txt
+3dmigoto/d3dx.ini.orig
+3dmigoto/ShaderCache/
+3dmigoto/ShaderFromGame/
+*.spec
